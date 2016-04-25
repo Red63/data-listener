@@ -6,6 +6,7 @@ import com.alibaba.otter.canal.client.CanalConnectors;
 import com.retail.common.sdk.kafka.message.KafkaProducerFactory;
 import com.retail.datahub.base.EventBatchModel;
 import com.retail.datahub.common.AbstractCanalClient;
+import com.retail.datahub.exception.ProcessDataException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -76,7 +77,7 @@ public class ClusterCanalClient extends AbstractCanalClient {
     }
 
     @Override
-    public void processData(List<EventBatchModel> eventBatchModels) {
+    public void processData(List<EventBatchModel> eventBatchModels) throws ProcessDataException {
         try {
             if(eventBatchModels != null && eventBatchModels.size() > 0){
                 for (EventBatchModel batchModel: eventBatchModels){
@@ -93,6 +94,7 @@ public class ClusterCanalClient extends AbstractCanalClient {
             }
         } catch (Exception e){
             MSG_LOG.error("sending exception", e);
+            throw new ProcessDataException("处理消息发送数据异常:" + e.getLocalizedMessage());
         }
     }
 

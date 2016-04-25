@@ -7,6 +7,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.retail.datahub.base.ColumnModel;
 import com.retail.datahub.base.EventBatchModel;
 import com.retail.datahub.base.RowDataModel;
+import com.retail.datahub.exception.ProcessDataException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.slf4j.Logger;
@@ -50,6 +51,12 @@ public abstract class AbstractCanalClient {
     protected String listenerdb;
     protected String listenertable;
     protected String event;
+
+
+    //延迟时间
+    private long delayTimes = 0;
+    //延迟次数
+    private int delayCount = 0;
 
     static {
         context_format = SEP + "****************************************************" + SEP;
@@ -377,6 +384,16 @@ public abstract class AbstractCanalClient {
         while (running) {
             try {
                 MDC.put("destination", destination);
+
+                //防止服务挂掉导致无限打印错误日志,退出循环监听
+                if(delayCount > 5){
+                    logger.error("由于canal服务无法连接,现在终止程序.监听binlog失效,请重启程序.....");
+                    break;
+                }
+                thread.sleep(delayTimes);
+
+
+
                 connector.connect();
                 connector.subscribe();
                 while (running) {
@@ -389,20 +406,27 @@ public abstract class AbstractCanalClient {
                         // } catch (InterruptedException e) {
                         // }
                     } else {
-                        //printSummary(message, batchId, size);
-                        //printEntry(message.getEntries());
-
                         List<EventBatchModel> eventBatchModels = fetchData(message.getEntries());
                         if (eventBatchModels != null && eventBatchModels.size() >0 ){
-                            processData(eventBatchModels);
+
+                            try {
+                                processData(eventBatchModels);
+
+                                connector.ack(batchId); // 提交确认
+                            } catch (ProcessDataException e){
+                                connector.rollback(batchId); // 处理失败, 回滚数据
+                            }
+
                         }
 
                     }
 
-                    connector.ack(batchId); // 提交确认
-                    // connector.rollback(batchId); // 处理失败, 回滚数据
                 }
+                delayTimes = 0;
+                delayCount = 0;
             } catch (Exception e) {
+                delayTimes += delayTimes*2 + 1000;
+                delayCount++;
                 logger.error("process error!", e);
             } finally {
                 connector.disconnect();
@@ -447,6 +471,6 @@ public abstract class AbstractCanalClient {
         this.event = event;
     }
 
-    public abstract void processData(List<EventBatchModel> eventBatchModels);
+    public abstract void processData(List<EventBatchModel> eventBatchModels) throws ProcessDataException;
 
 }

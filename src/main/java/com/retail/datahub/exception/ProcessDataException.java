@@ -17,4 +17,8 @@ public class ProcessDataException extends Exception{
     public ProcessDataException(){
         super();
     }
+
+    public ProcessDataException(Throwable cause) {
+        super(cause);
+    }
 }

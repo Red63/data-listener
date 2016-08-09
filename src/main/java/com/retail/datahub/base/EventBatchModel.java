@@ -6,7 +6,7 @@ import java.io.Serializable;
  * Created by red on 2016/3/11.
  */
 public class EventBatchModel implements Serializable{
-    private String batchId;
+    private Long batchId;
 
     private String dbName;
 
@@ -14,10 +14,6 @@ public class EventBatchModel implements Serializable{
 
     private String realTableName;
 
-    /**
-     * Note: maybe not the very exact execution time, we may manually merge some continuous events in batch,
-     * will use the time of the first one
-     */
     private long executionTime;
 
     private String eventType;
@@ -26,11 +22,11 @@ public class EventBatchModel implements Serializable{
 
     private String eventDate;
 
-    public String getBatchId() {
+    public Long getBatchId() {
         return batchId;
     }
 
-    public void setBatchId(String batchId) {
+    public void setBatchId(Long batchId) {
         this.batchId = batchId;
     }
 

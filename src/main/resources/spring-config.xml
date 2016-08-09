@@ -35,5 +35,6 @@
     
 
 	<import resource="classpath*:conf/spring-config-canal.xml"/>
+    <import resource="classpath*:conf/spring-config-kafka-producer.xml"/>
 
 </beans>
